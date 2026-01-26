@@ -50,10 +50,29 @@ uv run notion-mcp-fast
 
 | 테이블 | 용도 | 주요 컬럼 |
 |--------|------|-----------|
-| `block` | 모든 블록 (페이지 포함) | id, type, properties, parent_id, meta_user_id |
+| `block` | 모든 블록 (페이지 포함) | id, type, properties, parent_id, meta_user_id, created_by_id, last_edited_by_id |
 | `space` | 워크스페이스 | id, name, icon |
 | `collection` | 데이터베이스 스키마 | id, name, schema |
 | `notion_user` | 사용자 | id, name, email |
+
+## 페이지 메타데이터
+
+각 페이지는 다음 메타데이터를 포함:
+
+| 필드 | 설명 | 예시 |
+|------|------|------|
+| `id` | 페이지 ID | `2eaa024d-f4dc-...` |
+| `title` | 페이지 제목 | `SKT Design Camp` |
+| `created_time` | 생성 시간 (timestamp) | `1737001260000` |
+| `last_edited_time` | 수정 시간 (timestamp) | `1737877980000` |
+| `created_by_id` | 생성자 ID | `7af5870b-...` |
+| `created_by_name` | 생성자 이름 | `한가경` |
+| `last_edited_by_id` | 최종 수정자 ID | `7af5870b-...` |
+| `last_edited_by_name` | 최종 수정자 이름 | `윤누리` |
+| `parent_id` | 상위 페이지/DB ID | - |
+| `parent_table` | 상위 타입 | `collection`, `space`, `block` |
+| `icon` | 아이콘 | 이모지 또는 URL |
+| `cover` | 커버 이미지 URL | - |
 
 ## 블록 타입별 렌더링
 

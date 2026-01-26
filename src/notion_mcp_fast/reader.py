@@ -98,6 +98,25 @@ class NotionLocalReader:
                 loaded_at=time.time()
             )
 
+            # Load users first (needed for resolving creator/editor names)
+            cursor = conn.execute("""
+                SELECT id, name, email, given_name, family_name, profile_photo
+                FROM notion_user
+            """)
+
+            for row in cursor:
+                user_id = row["id"]
+                name = row["name"] or ""
+                if not name and (row["given_name"] or row["family_name"]):
+                    name = f"{row['given_name'] or ''} {row['family_name'] or ''}".strip()
+
+                cache.users[user_id] = {
+                    "id": user_id,
+                    "name": name,
+                    "email": row["email"] or "",
+                    "profile_photo": row["profile_photo"],
+                }
+
             # Build user filter clause
             user_filter = ""
             params: tuple = ()
@@ -108,7 +127,8 @@ class NotionLocalReader:
             # Load pages (type = 'page')
             cursor = conn.execute(f"""
                 SELECT id, type, properties, parent_id, parent_table,
-                       format, created_time, last_edited_time, alive
+                       format, created_time, last_edited_time,
+                       created_by_id, last_edited_by_id, alive
                 FROM block
                 WHERE type = 'page' AND alive = 1
                 {user_filter}
@@ -119,6 +139,12 @@ class NotionLocalReader:
                 properties = safe_json_loads(row["properties"])
                 format_data = safe_json_loads(row["format"])
 
+                # Resolve creator/editor names from users cache
+                created_by_id = row["created_by_id"]
+                last_edited_by_id = row["last_edited_by_id"]
+                created_by_name = cache.users.get(created_by_id, {}).get("name") if created_by_id else None
+                last_edited_by_name = cache.users.get(last_edited_by_id, {}).get("name") if last_edited_by_id else None
+
                 cache.pages[block_id] = {
                     "id": block_id,
                     "title": get_title(properties),
@@ -128,6 +154,10 @@ class NotionLocalReader:
                     "cover": format_data.get("page_cover") if format_data else None,
                     "created_time": row["created_time"],
                     "last_edited_time": row["last_edited_time"],
+                    "created_by_id": created_by_id,
+                    "created_by_name": created_by_name,
+                    "last_edited_by_id": last_edited_by_id,
+                    "last_edited_by_name": last_edited_by_name,
                 }
 
             # Load databases (collection_view_page and collection_view)
@@ -170,25 +200,6 @@ class NotionLocalReader:
                     "icon": row["icon"],
                     "plan_type": row["plan_type"],
                     "domain": settings.get("domain") if settings else None,
-                }
-
-            # Load users (notion_user table)
-            cursor = conn.execute("""
-                SELECT id, name, email, given_name, family_name, profile_photo
-                FROM notion_user
-            """)
-
-            for row in cursor:
-                user_id = row["id"]
-                name = row["name"] or ""
-                if not name and (row["given_name"] or row["family_name"]):
-                    name = f"{row['given_name'] or ''} {row['family_name'] or ''}".strip()
-
-                cache.users[user_id] = {
-                    "id": user_id,
-                    "name": name,
-                    "email": row["email"] or "",
-                    "profile_photo": row["profile_photo"],
                 }
 
             self._cache = cache

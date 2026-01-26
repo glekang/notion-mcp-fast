@@ -1,5 +1,7 @@
 # notion-mcp-fast
 
+[한국어](README.ko.md)
+
 Fast MCP server for Notion - reads from Notion.app's local SQLite cache on macOS.
 
 ## Why?
@@ -8,8 +10,11 @@ The official Notion API requires authentication and has rate limits. This MCP se
 
 - **No API calls** - instant access without network latency
 - **No rate limits** - read as much as you want
+- **Near real-time sync** - Notion.app syncs via WebSocket, updates reflect in 1-3 seconds
 - **Offline access** - works without internet connection
 - **Full content access** - search page content, not just metadata
+
+> ⚠️ **Read-only**: This server cannot write to Notion. For write operations, use the [official Notion API](https://developers.notion.com/).
 
 ## Requirements
 
@@ -21,12 +26,12 @@ The official Notion API requires authentication and has rate limits. This MCP se
 
 ```bash
 # Clone and install
-git clone https://github.com/everything-chalna/notion-mcp-fast.git
+git clone https://github.com/chat-prompt/notion-mcp-fast.git
 cd notion-mcp-fast
 uv sync
 
 # Or install directly
-uv pip install git+https://github.com/everything-chalna/notion-mcp-fast.git
+uv pip install git+https://github.com/chat-prompt/notion-mcp-fast.git
 ```
 
 ## Usage with Claude Desktop
@@ -123,6 +128,18 @@ This usually means:
 ### Permission Denied
 
 macOS may block access to Application Support. Grant Terminal/IDE full disk access in System Preferences > Security & Privacy > Privacy > Full Disk Access.
+
+## Background: Why Does Notion Have a Local Cache?
+
+Notion's desktop app is built on Electron and maintains a local SQLite database for offline support. When you open any page in Notion, it gets cached locally so you can:
+
+- Access recently viewed pages without internet
+- Continue working during network interruptions
+- Experience faster page loads on subsequent visits
+
+This local cache (`notion.db`) contains the same block-based data structure that Notion uses internally - pages, databases, text blocks, and all their properties. The app syncs changes via WebSocket, so the local cache stays remarkably fresh (typically 1-3 seconds behind the server when online).
+
+This MCP server simply reads from that existing cache - no additional sync mechanism, no API tokens, no rate limits.
 
 ## How It Works
 
