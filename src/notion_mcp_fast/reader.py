@@ -6,6 +6,7 @@ and blocks without API calls.
 """
 
 import os
+import platform
 import sqlite3
 import time
 from dataclasses import dataclass, field
@@ -18,9 +19,23 @@ from .block_parser import (
     safe_json_loads,
 )
 
-NOTION_DB_PATH = os.path.expanduser(
-    "~/Library/Application Support/Notion/notion.db"
-)
+
+def _get_default_notion_db_path() -> str:
+    """Get the default Notion database path based on OS."""
+    # Allow override via environment variable
+    if env_path := os.environ.get("NOTION_DB_PATH"):
+        return env_path
+
+    system = platform.system()
+    if system == "Darwin":  # macOS
+        return os.path.expanduser("~/Library/Application Support/Notion/notion.db")
+    elif system == "Windows":
+        return os.path.join(os.environ.get("APPDATA", ""), "Notion", "notion.db")
+    else:  # Linux
+        return os.path.expanduser("~/.config/Notion/notion.db")
+
+
+NOTION_DB_PATH = _get_default_notion_db_path()
 
 CACHE_TTL_SECONDS = 300  # 5 minutes
 
